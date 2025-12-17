@@ -9,9 +9,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-st.write("App started")
-st.write("Before heavy logic")
-
 from PIL import Image
 import json
 import re
