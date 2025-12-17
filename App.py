@@ -457,132 +457,132 @@ st.markdown("""
 
 @st.cache_data(ttl=1800, show_spinner=False)  # Cache for 30 minutes
 
-# def movie_poster_fetcher(imdb_link, movie_title=None):
-#     """Fetch and display movie poster from IMDB with OMDB API fallback"""
-#     # First, try OMDB API (more reliable)
-#     imdb_id = extract_imdb_id(imdb_link)
-#     if imdb_id or movie_title:
-#         omdb_data = fetch_from_omdb(imdb_id=imdb_id, movie_title=movie_title)
-#         if omdb_data and omdb_data.get("Poster") and omdb_data["Poster"] != "N/A":
-#             try:
-#                 poster_url = omdb_data["Poster"]
-#                 u = urlopen(poster_url)
-#                 raw_data = u.read()
-#                 image = PIL.Image.open(io.BytesIO(raw_data))
-#                 image = image.resize((220, 330))
-#                 return image
-#             except:
-#                 pass
+def movie_poster_fetcher(imdb_link, movie_title=None):
+    """Fetch and display movie poster from IMDB with OMDB API fallback"""
+    # First, try OMDB API (more reliable)
+    imdb_id = extract_imdb_id(imdb_link)
+    if imdb_id or movie_title:
+        omdb_data = fetch_from_omdb(imdb_id=imdb_id, movie_title=movie_title)
+        if omdb_data and omdb_data.get("Poster") and omdb_data["Poster"] != "N/A":
+            try:
+                poster_url = omdb_data["Poster"]
+                u = urlopen(poster_url)
+                raw_data = u.read()
+                image = PIL.Image.open(io.BytesIO(raw_data))
+                image = image.resize((220, 330))
+                return image
+            except:
+                pass
     
-#     # Fallback to IMDB scraping
-#     try:
-#         url_data = requests.get(imdb_link, headers=hdr, timeout=15).text
-#         s_data = BeautifulSoup(url_data, 'html.parser')
+    # Fallback to IMDB scraping
+    try:
+        url_data = requests.get(imdb_link, headers=hdr, timeout=15).text
+        s_data = BeautifulSoup(url_data, 'html.parser')
         
-#         # Method 1: Try JSON-LD structured data (most reliable)
-#         json_ld = s_data.find("script", type="application/ld+json")
-#         if json_ld:
-#             try:
-#                 data = json.loads(json_ld.string)
-#                 if isinstance(data, dict) and 'image' in data:
-#                     poster_url = data['image']
-#                     if isinstance(poster_url, str) and poster_url.startswith('http'):
-#                         u = urlopen(poster_url)
-#                         raw_data = u.read()
-#                         image = PIL.Image.open(io.BytesIO(raw_data))
-#                         image = image.resize((220, 330))
-#                         return image
-#             except:
-#                 pass
+        # Method 1: Try JSON-LD structured data (most reliable)
+        json_ld = s_data.find("script", type="application/ld+json")
+        if json_ld:
+            try:
+                data = json.loads(json_ld.string)
+                if isinstance(data, dict) and 'image' in data:
+                    poster_url = data['image']
+                    if isinstance(poster_url, str) and poster_url.startswith('http'):
+                        u = urlopen(poster_url)
+                        raw_data = u.read()
+                        image = PIL.Image.open(io.BytesIO(raw_data))
+                        image = image.resize((220, 330))
+                        return image
+            except:
+                pass
         
-#         # Method 2: Try Open Graph image
-#         og_image = s_data.find("meta", property="og:image")
-#         if og_image and 'content' in og_image.attrs:
-#             poster_url = og_image['content']
-#             if poster_url.startswith('http'):
-#                 try:
-#                     u = urlopen(poster_url)
-#                     raw_data = u.read()
-#                     image = PIL.Image.open(io.BytesIO(raw_data))
-#                     image = image.resize((220, 330))
-#                     return image
-#                 except:
-#                     pass
+        # Method 2: Try Open Graph image
+        og_image = s_data.find("meta", property="og:image")
+        if og_image and 'content' in og_image.attrs:
+            poster_url = og_image['content']
+            if poster_url.startswith('http'):
+                try:
+                    u = urlopen(poster_url)
+                    raw_data = u.read()
+                    image = PIL.Image.open(io.BytesIO(raw_data))
+                    image = image.resize((220, 330))
+                    return image
+                except:
+                    pass
         
-#         # Method 3: Try the new IMDB structure with various selectors
-#         selectors = [
-#             ("div", {"class": "ipc-media--poster-27x40"}),
-#             ("div", {"class": "ipc-media--poster"}),
-#             ("div", {"class": "poster"}),
-#             ("img", {"class": "ipc-image"}),
-#             ("img", {"data-testid": "hero-poster"}),
-#         ]
+        # Method 3: Try the new IMDB structure with various selectors
+        selectors = [
+            ("div", {"class": "ipc-media--poster-27x40"}),
+            ("div", {"class": "ipc-media--poster"}),
+            ("div", {"class": "poster"}),
+            ("img", {"class": "ipc-image"}),
+            ("img", {"data-testid": "hero-poster"}),
+        ]
         
-#         for tag, attrs in selectors:
-#             element = s_data.find(tag, attrs)
-#             if element:
-#                 img_tag = element.find("img") if element.name != "img" else element
-#                 if img_tag:
-#                     # Try multiple attributes
-#                     for attr in ['src', 'data-src', 'srcset', 'data-image-url']:
-#                         if attr in img_tag.attrs:
-#                             poster_url = img_tag[attr]
-#                             if attr == 'srcset':
-#                                 poster_url = poster_url.split(',')[0].split()[0]
+        for tag, attrs in selectors:
+            element = s_data.find(tag, attrs)
+            if element:
+                img_tag = element.find("img") if element.name != "img" else element
+                if img_tag:
+                    # Try multiple attributes
+                    for attr in ['src', 'data-src', 'srcset', 'data-image-url']:
+                        if attr in img_tag.attrs:
+                            poster_url = img_tag[attr]
+                            if attr == 'srcset':
+                                poster_url = poster_url.split(',')[0].split()[0]
                             
-#                             if poster_url and poster_url.startswith('http'):
-#                                 try:
-#                                     # Clean up URL
-#                                     if '._V1_' in poster_url:
-#                                         # Try to get higher resolution
-#                                         poster_url = poster_url.split('._V1_')[0] + '._V1_SX300.jpg'
-#                                     u = urlopen(poster_url)
-#                                     raw_data = u.read()
-#                                     image = PIL.Image.open(io.BytesIO(raw_data))
-#                                     image = image.resize((220, 330))
-#                                     return image
-#                                 except:
-#                                     continue
+                            if poster_url and poster_url.startswith('http'):
+                                try:
+                                    # Clean up URL
+                                    if '._V1_' in poster_url:
+                                        # Try to get higher resolution
+                                        poster_url = poster_url.split('._V1_')[0] + '._V1_SX300.jpg'
+                                    u = urlopen(poster_url)
+                                    raw_data = u.read()
+                                    image = PIL.Image.open(io.BytesIO(raw_data))
+                                    image = image.resize((220, 330))
+                                    return image
+                                except:
+                                    continue
         
-#         # Method 4: Search all images for poster-like URLs
-#         all_imgs = s_data.find_all("img")
-#         for img in all_imgs:
-#             src = img.get('src') or img.get('data-src') or img.get('data-image-url')
-#             if src and ('poster' in src.lower() or 'images' in src.lower()):
-#                 if src.startswith('http') or src.startswith('//'):
-#                     if not src.startswith('http'):
-#                         src = 'https:' + src
-#                     try:
-#                         u = urlopen(src)
-#                         raw_data = u.read()
-#                         image = PIL.Image.open(io.BytesIO(raw_data))
-#                         image = image.resize((220, 330))
-#                         return image
-#                     except:
-#                         continue
+        # Method 4: Search all images for poster-like URLs
+        all_imgs = s_data.find_all("img")
+        for img in all_imgs:
+            src = img.get('src') or img.get('data-src') or img.get('data-image-url')
+            if src and ('poster' in src.lower() or 'images' in src.lower()):
+                if src.startswith('http') or src.startswith('//'):
+                    if not src.startswith('http'):
+                        src = 'https:' + src
+                    try:
+                        u = urlopen(src)
+                        raw_data = u.read()
+                        image = PIL.Image.open(io.BytesIO(raw_data))
+                        image = image.resize((220, 330))
+                        return image
+                    except:
+                        continue
         
-#         return None
-#     except Exception as e:
-#         # Try one more time with a simpler approach - extract from page source
-#         try:
-#             # Look for image URLs in the raw HTML
-#             if 'images' in url_data.lower() or 'poster' in url_data.lower():
-#                 # Find image URLs
-#                 img_pattern = r'https?://[^"\s]+\.(?:jpg|jpeg|png|webp)[^"\s]*'
-#                 matches = re.findall(img_pattern, url_data)
-#                 for img_url in matches[:5]:  # Try first 5 matches
-#                     if 'poster' in img_url.lower() or 'images' in img_url.lower():
-#                         try:
-#                             u = urlopen(img_url)
-#                             raw_data = u.read()
-#                             image = PIL.Image.open(io.BytesIO(raw_data))
-#                             image = image.resize((220, 330))
-#                             return image
-#                         except:
-#                             continue
-#         except:
-#             pass
-#         return None
+        return None
+    except Exception as e:
+        # Try one more time with a simpler approach - extract from page source
+        try:
+            # Look for image URLs in the raw HTML
+            if 'images' in url_data.lower() or 'poster' in url_data.lower():
+                # Find image URLs
+                img_pattern = r'https?://[^"\s]+\.(?:jpg|jpeg|png|webp)[^"\s]*'
+                matches = re.findall(img_pattern, url_data)
+                for img_url in matches[:5]:  # Try first 5 matches
+                    if 'poster' in img_url.lower() or 'images' in img_url.lower():
+                        try:
+                            u = urlopen(img_url)
+                            raw_data = u.read()
+                            image = PIL.Image.open(io.BytesIO(raw_data))
+                            image = image.resize((220, 330))
+                            return image
+                        except:
+                            continue
+        except:
+            pass
+        return None
 
 @st.cache_data(ttl=1800, show_spinner=False)  # Cache for 30 minutes  
 def get_movie_info(imdb_link, movie_title=None):
