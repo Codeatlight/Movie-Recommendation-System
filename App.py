@@ -584,158 +584,158 @@ st.markdown("""
 #             pass
 #         return None
 
-# @st.cache_data(ttl=1800, show_spinner=False)  # Cache for 30 minutes  
-# def get_movie_info(imdb_link, movie_title=None):
-#     """Extract movie information from IMDB with OMDB API fallback"""
-#     # First, try OMDB API (more reliable)
-#     imdb_id = extract_imdb_id(imdb_link)
-#     if imdb_id or movie_title:
-#         omdb_data = fetch_from_omdb(imdb_id=imdb_id, movie_title=movie_title)
-#         if omdb_data:
-#             title = omdb_data.get("Title", "")
-#             plot = omdb_data.get("Plot", "")
-#             actors = omdb_data.get("Actors", "")
+@st.cache_data(ttl=1800, show_spinner=False)  # Cache for 30 minutes  
+def get_movie_info(imdb_link, movie_title=None):
+    """Extract movie information from IMDB with OMDB API fallback"""
+    # First, try OMDB API (more reliable)
+    imdb_id = extract_imdb_id(imdb_link)
+    if imdb_id or movie_title:
+        omdb_data = fetch_from_omdb(imdb_id=imdb_id, movie_title=movie_title)
+        if omdb_data:
+            title = omdb_data.get("Title", "")
+            plot = omdb_data.get("Plot", "")
+            actors = omdb_data.get("Actors", "")
             
-#             # If we got data from OMDB, return it
-#             if plot and plot != "N/A":
-#                 return title, actors, plot, ""
-#             elif title:
-#                 # At least we have a title
-#                 return title, actors, "", ""
+            # If we got data from OMDB, return it
+            if plot and plot != "N/A":
+                return title, actors, plot, ""
+            elif title:
+                # At least we have a title
+                return title, actors, "", ""
     
-#     # Fallback to IMDB scraping
-#     try:
-#         url_data = requests.get(imdb_link, headers=hdr, timeout=15).text
-#         s_data = BeautifulSoup(url_data, 'html.parser')
+    # Fallback to IMDB scraping
+    try:
+        url_data = requests.get(imdb_link, headers=hdr, timeout=15).text
+        s_data = BeautifulSoup(url_data, 'html.parser')
         
-#         # Initialize return values
-#         title = ""
-#         cast = ""
-#         story = ""
+        # Initialize return values
+        title = ""
+        cast = ""
+        story = ""
         
-#         # Method 1: Try JSON-LD structured data (most reliable)
-#         json_ld = s_data.find("script", type="application/ld+json")
-#         if json_ld:
-#             try:
-#                 data = json.loads(json_ld.string)
-#                 if isinstance(data, dict):
-#                     if 'name' in data:
-#                         title = data['name']
-#                     if 'description' in data:
-#                         story = data['description']
-#                     if 'actor' in data:
-#                         actors = data['actor']
-#                         if isinstance(actors, list):
-#                             cast_names = [actor.get('name', '') for actor in actors[:5] if isinstance(actor, dict)]
-#                             cast = ", ".join([name for name in cast_names if name])
-#             except:
-#                 pass
+        # Method 1: Try JSON-LD structured data (most reliable)
+        json_ld = s_data.find("script", type="application/ld+json")
+        if json_ld:
+            try:
+                data = json.loads(json_ld.string)
+                if isinstance(data, dict):
+                    if 'name' in data:
+                        title = data['name']
+                    if 'description' in data:
+                        story = data['description']
+                    if 'actor' in data:
+                        actors = data['actor']
+                        if isinstance(actors, list):
+                            cast_names = [actor.get('name', '') for actor in actors[:5] if isinstance(actor, dict)]
+                            cast = ", ".join([name for name in cast_names if name])
+            except:
+                pass
         
-#         # Method 2: Try meta description (very reliable for basic info)
-#         imdb_content = s_data.find("meta", {"name": "description"})
-#         if imdb_content and 'content' in imdb_content.attrs:
-#             movie_descr = imdb_content.attrs['content']
-#             if movie_descr and len(movie_descr) > 10:
-#                 # Parse the description - usually format: "Title. Cast info. Story info."
-#                 parts = movie_descr.split(".")
-#                 if not title and len(parts) >= 1:
-#                     title = parts[0].strip()
-#                 if not cast and len(parts) >= 2:
-#                     cast = parts[1].strip()
-#                 if not story and len(parts) >= 3:
-#                     story = ".".join(parts[2:]).strip()
+        # Method 2: Try meta description (very reliable for basic info)
+        imdb_content = s_data.find("meta", {"name": "description"})
+        if imdb_content and 'content' in imdb_content.attrs:
+            movie_descr = imdb_content.attrs['content']
+            if movie_descr and len(movie_descr) > 10:
+                # Parse the description - usually format: "Title. Cast info. Story info."
+                parts = movie_descr.split(".")
+                if not title and len(parts) >= 1:
+                    title = parts[0].strip()
+                if not cast and len(parts) >= 2:
+                    cast = parts[1].strip()
+                if not story and len(parts) >= 3:
+                    story = ".".join(parts[2:]).strip()
         
-#         # Method 3: Extract plot summary from page with multiple selectors
-#         if not story:
-#             plot_selectors = [
-#                 ("div", {"data-testid": "plot"}),
-#                 ("span", {"data-testid": "plot-xl"}),
-#                 ("span", {"data-testid": "plot-l"}),
-#                 ("div", {"class": "plot_summary"}),
-#                 ("div", {"class": "summary_text"}),
-#                 ("p", {"data-testid": "plot"}),
-#             ]
+        # Method 3: Extract plot summary from page with multiple selectors
+        if not story:
+            plot_selectors = [
+                ("div", {"data-testid": "plot"}),
+                ("span", {"data-testid": "plot-xl"}),
+                ("span", {"data-testid": "plot-l"}),
+                ("div", {"class": "plot_summary"}),
+                ("div", {"class": "summary_text"}),
+                ("p", {"data-testid": "plot"}),
+            ]
             
-#             for tag, attrs in plot_selectors:
-#                 plot_div = s_data.find(tag, attrs)
-#                 if plot_div:
-#                     story = plot_div.get_text(strip=True)
-#                     story = " ".join(story.split())
-#                     if story and len(story) > 20:  # Valid plot
-#                         break
+            for tag, attrs in plot_selectors:
+                plot_div = s_data.find(tag, attrs)
+                if plot_div:
+                    story = plot_div.get_text(strip=True)
+                    story = " ".join(story.split())
+                    if story and len(story) > 20:  # Valid plot
+                        break
         
-#         # Method 4: Extract cast information with multiple methods
-#         if not cast:
-#             # Try structured data first
-#             cast_section = s_data.find("div", {"data-testid": "title-cast"})
-#             if not cast_section:
-#                 cast_section = s_data.find("table", class_="cast_list")
-#             if not cast_section:
-#                 cast_section = s_data.find("div", class_="cast_list")
+        # Method 4: Extract cast information with multiple methods
+        if not cast:
+            # Try structured data first
+            cast_section = s_data.find("div", {"data-testid": "title-cast"})
+            if not cast_section:
+                cast_section = s_data.find("table", class_="cast_list")
+            if not cast_section:
+                cast_section = s_data.find("div", class_="cast_list")
             
-#             if cast_section:
-#                 cast_links = cast_section.find_all("a", href=True)
-#                 cast_names = []
-#                 for link in cast_links[:8]:  # Get more names
-#                     name = link.get_text(strip=True)
-#                     if name and name not in ["See full cast", "See full cast & crew", "See more"]:
-#                         # Check if it's a valid name (not a link text)
-#                         if len(name) > 2 and not name.startswith("http"):
-#                             cast_names.append(name)
-#                 if cast_names:
-#                     cast = ", ".join(cast_names[:5])  # Limit to 5
+            if cast_section:
+                cast_links = cast_section.find_all("a", href=True)
+                cast_names = []
+                for link in cast_links[:8]:  # Get more names
+                    name = link.get_text(strip=True)
+                    if name and name not in ["See full cast", "See full cast & crew", "See more"]:
+                        # Check if it's a valid name (not a link text)
+                        if len(name) > 2 and not name.startswith("http"):
+                            cast_names.append(name)
+                if cast_names:
+                    cast = ", ".join(cast_names[:5])  # Limit to 5
         
-#         # Method 5: Extract title with multiple selectors
-#         if not title:
-#             title_selectors = [
-#                 ("h1", {"data-testid": "hero-title-block__title"}),
-#                 ("h1", {"class": "title_wrapper"}),
-#                 ("title", {}),
-#                 ("meta", {"property": "og:title"}),
-#             ]
+        # Method 5: Extract title with multiple selectors
+        if not title:
+            title_selectors = [
+                ("h1", {"data-testid": "hero-title-block__title"}),
+                ("h1", {"class": "title_wrapper"}),
+                ("title", {}),
+                ("meta", {"property": "og:title"}),
+            ]
             
-#             for tag, attrs in title_selectors:
-#                 title_elem = s_data.find(tag, attrs)
-#                 if title_elem:
-#                     if tag == "meta" and 'content' in title_elem.attrs:
-#                         title = title_elem['content']
-#                     else:
-#                         title = title_elem.get_text(strip=True)
-#                     if title:
-#                         # Clean up title
-#                         title = title.split(" - IMDb")[0].split(" | ")[0].split(" (")[0].strip()
-#                         break
+            for tag, attrs in title_selectors:
+                title_elem = s_data.find(tag, attrs)
+                if title_elem:
+                    if tag == "meta" and 'content' in title_elem.attrs:
+                        title = title_elem['content']
+                    else:
+                        title = title_elem.get_text(strip=True)
+                    if title:
+                        # Clean up title
+                        title = title.split(" - IMDb")[0].split(" | ")[0].split(" (")[0].strip()
+                        break
         
-#         # Clean and return (without prefixes, we'll add them in display)
-#         title = title if title else ""
-#         cast = cast if cast else ""
-#         story = story if story else ""
+        # Clean and return (without prefixes, we'll add them in display)
+        title = title if title else ""
+        cast = cast if cast else ""
+        story = story if story else ""
         
-#         # Final fallback: Try to extract from raw HTML if nothing found
-#         if not story and not cast:
-#             try:
-#                 # Look for common patterns in the HTML
-#                 page_text = s_data.get_text()
+        # Final fallback: Try to extract from raw HTML if nothing found
+        if not story and not cast:
+            try:
+                # Look for common patterns in the HTML
+                page_text = s_data.get_text()
                 
-#                 # Try to find plot in common locations
-#                 plot_keywords = ['plot', 'summary', 'synopsis', 'story']
-#                 for keyword in plot_keywords:
-#                     # Look for text near these keywords
-#                     idx = page_text.lower().find(keyword)
-#                     if idx > 0:
-#                         # Extract surrounding text
-#                         snippet = page_text[max(0, idx-50):idx+200]
-#                         if len(snippet) > 30:
-#                             story = snippet.strip()
-#                             break
-#             except:
-#                 pass
+                # Try to find plot in common locations
+                plot_keywords = ['plot', 'summary', 'synopsis', 'story']
+                for keyword in plot_keywords:
+                    # Look for text near these keywords
+                    idx = page_text.lower().find(keyword)
+                    if idx > 0:
+                        # Extract surrounding text
+                        snippet = page_text[max(0, idx-50):idx+200]
+                        if len(snippet) > 30:
+                            story = snippet.strip()
+                            break
+            except:
+                pass
         
-#         return title, cast, story, ""
+        return title, cast, story, ""
         
-#     except Exception as e:
-#         # Last resort: return empty but don't fail
-#         return "", "", "", ""
+    except Exception as e:
+        # Last resort: return empty but don't fail
+        return "", "", "", ""
 
 def KNN_Movie_Recommender(test_point, k):
     """Generate movie recommendations using KNN algorithm"""
@@ -850,7 +850,6 @@ def display_movie_card(movie, link, ratings, index, show_poster=False):
             """, unsafe_allow_html=True)
 
 def main():
-    st.success("Main function reached ✅")
 
     # Sidebar with enhanced design
     with st.sidebar:
@@ -995,7 +994,7 @@ def main():
                     
                     for idx, (movie, link, ratings) in enumerate(table, 1):
                         progress_bar.progress((idx) / total_movies)
-                        display_movie_card(movie, link, ratings, idx, show_poster = false)
+                        display_movie_card(movie, link, ratings, idx, show_poster)
                     
                     progress_bar.empty()
     
@@ -1052,7 +1051,7 @@ def main():
                     
                     for idx, (movie, link, ratings) in enumerate(table, 1):
                         progress_bar.progress((idx) / total_movies)
-                        display_movie_card(movie, link, ratings, idx, show_poster = false)
+                        display_movie_card(movie, link, ratings, idx, show_poster)
                     
                     progress_bar.empty()
         else:
