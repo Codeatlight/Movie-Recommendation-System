@@ -850,6 +850,8 @@ def display_movie_card(movie, link, ratings, index, show_poster=False):
             """, unsafe_allow_html=True)
 
 def main():
+    st.success("Main function reached ✅")
+
     # Sidebar with enhanced design
     with st.sidebar:
         st.markdown("""
@@ -1056,3 +1058,4 @@ def main():
         else:
             st.info("👆 Please select at least one genre to get recommendations.")
 
+main()
