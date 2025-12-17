@@ -1,4 +1,17 @@
+
 import streamlit as st
+
+# Page configuration
+st.set_page_config(
+    page_title="CinemaScope - Movie Recommendation System",
+    page_icon="🎬",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+st.write("App started")
+st.write("Before heavy logic")
+
 from PIL import Image
 import json
 import re
@@ -8,18 +21,6 @@ from bs4 import BeautifulSoup
 import requests, io
 import PIL.Image
 from urllib.request import urlopen
-from flask import Flask, request, jsonify, render_template
-
-
-app = Flask(__name__)
-
-# Page configuration
-st.set_page_config(
-    page_title="CinemaScope - Movie Recommendation System",
-    page_icon="🎬",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
 
 # Load data
 @st.cache_data
