@@ -8,6 +8,10 @@ from bs4 import BeautifulSoup
 import requests, io
 import PIL.Image
 from urllib.request import urlopen
+from flask import Flask, request, jsonify, render_template
+
+
+app = Flask(__name__)
 
 # Page configuration
 st.set_page_config(
@@ -1054,4 +1058,4 @@ def main():
             st.info("👆 Please select at least one genre to get recommendations.")
 
 if __name__ == "__main__":
-    main()
+    app.run(host="0.0.0.0", port=10000)
