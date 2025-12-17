@@ -5,3 +5,5 @@ scikit-learn
 requests
 gunicorn
 streamlit
+beautifulsoup4
+requests
